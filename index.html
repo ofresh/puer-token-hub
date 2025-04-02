@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puer Token Hub</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #01f5f3;
+            min-height: 100vh;
+        }
+        .header {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .header button {
+            background-color: #555;
+            color: #01f5f3;
+            padding: 8px 16px;
+            font-size: 18px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+        }
+        .header button:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+        }
+        #faucetButton {
+            display: none;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background-color: transparent;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 80px;
+            position: relative;
+        }
+        .title {
+            text-align: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #01f5f3;
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #666;
+            font-size: 18px;
+            font-family: 'Arial', sans-serif;
+        }
+        .tab.active {
+            color: #01f5f3;
+            border-bottom: 2px solid #01f5f3;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .swap-box, .liquidity-box {
+            padding: 20px;
+            border: 2px solid #555;
+            border-radius: 12px;
+            background-color: #222;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group label {
+            margin-bottom: 5px;
+            color: #01f5f3;
+            font-size: 18px;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            width: 100%;
+            text-align: left;
+        }
+        .input-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .input-group input {
+            width: 70%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #555;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: #222;
+            color: #01f5f3;
+        }
+        .token-select {
+            width: 30%;
+            margin-left: 10px;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #555;
+            color: #01f5f3;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+        }
+        .swap-arrow {
+            text-align: center;
+            font-size: 24px;
+            cursor: pointer;
+            margin: 10px 0;
+            color: #01f5f3;
+        }
+        .output {
+            margin-top: 10px;
+            color: #01f5f3;
+            font-size: 16px;
+            font-family: 'Arial', sans-serif;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            background-color: #555;
+            color: #01f5f3;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+        }
+        button:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 20px;
+            color: #01f5f3;
+            font-size: 16px;
+            font-family: 'Arial', sans-serif;
+        }
+        #faucetMenu {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background-color: #222;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        #faucetMenu button {
+            width: 100%;
+            margin: 5px 0;
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button id="faucetButton">Faucet</button>
+        <button id="connectWallet">Connect Wallet</button>
+    </div>
+
+    <div id="faucetMenu">
+        <button id="teaFaucet">TEA</button>
+        <button id="puerFaucet">PUER</button>
+    </div>
+
+    <div class="container">
+        <div class="title">PUER SWAP</div>
+        <div class="tabs">
+            <div class="tab active" data-tab="swap">Swap</div>
+            <div class="tab" data-tab="liquidity">Liquidity</div>
+        </div>
+
+        <div id="swap" class="tab-content active">
+            <div class="swap-box">
+                <div class="input-group">
+                    <label>From:</label>
+                    <div class="input-container">
+                        <input id="swapFromAmount" type="number" placeholder="0.0" disabled>
+                        <button class="token-select" id="swapFromToken">TEA</button>
+                    </div>
+                </div>
+                <div class="swap-arrow" id="swapDirection">↓</div>
+                <div class="input-group">
+                    <label>To (estimated):</label>
+                    <div class="input-container">
+                        <input id="swapToAmount" type="text" placeholder="0.0" disabled readonly>
+                        <button class="token-select" id="swapToToken">PUER</button>
+                    </div>
+                </div>
+                <div class="output" id="swapRate"></div>
+                <button id="swapButton" disabled>Swap</button>
+            </div>
+        </div>
+
+        <div id="liquidity" class="tab-content">
+            <div class="liquidity-box">
+                <div class="input-group">
+                    <label>PUER Amount:</label>
+                    <input id="puerAmount" type="number" placeholder="0.0" disabled>
+                </div>
+                <div class="input-group">
+                    <label>TEA Amount:</label>
+                    <input id="teaAmount" type="number" placeholder="0.0" disabled>
+                </div>
+                <div class="output" id="liquidityRate"></div>
+                <button id="addLiquidity" disabled>Add Liquidity</button>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="./ethers.umd.min.js"></script>
+    <script>
+        const puerAddress = "0xADbaE8754FEF214E13ff08F7b247932828C234aF";
+        const faucetAddress = "0x1B34Fac0b8907ff9D6c05fB74CF6239CA296b2e6";
+        const swapAddress = "0x1709C6E7d4cF08c56f6011609C4e9901cCF2cCA1";
+
+        const erc20ABI = [
+            "function approve W(address spender, uint256 amount) public returns (bool)",
+            "function balanceOf(address account) public view returns (uint256)",
+            "function allowance(address owner, address spender) public view returns (uint256)"
+        ];
+        const faucetABI = ["function requestTokens() external"];
+        const swapABI = [
+            "function addLiquidity(uint256 puerAmount) external payable",
+            "function removeLiquidity(uint256 puerAmount, uint256 teaAmount) external",
+            "function swapPuerToTea(uint256 puerAmount) external",
+            "function swapTeaToPuer() external payable",
+            "function getTeaPerPuer() external view returns (uint256)",
+            "function puerBalance() external view returns (uint256)",
+            "function teaBalance() external view returns (uint256)",
+            "function owner() external view returns (address)"
+        ];
+
+        const connectButton = document.getElementById("connectWallet");
+        const faucetButton = document.getElementById("faucetButton");
+        const teaFaucet = document.getElementById("teaFaucet");
+        const puerFaucet = document.getElementById("puerFaucet");
+        const faucetMenu = document.getElementById("faucetMenu");
+        const addLiquidityButton = document.getElementById("addLiquidity");
+        const swapButton = document.getElementById("swapButton");
+        const puerAmountInput = document.getElementById("puerAmount");
+        const teaAmountInput = document.getElementById("teaAmount");
+        const swapFromAmountInput = document.getElementById("swapFromAmount");
+        const swapToAmountInput = document.getElementById("swapToAmount");
+        const swapFromToken = document.getElementById("swapFromToken");
+        const swapToToken = document.getElementById("swapToToken");
+        const swapDirection = document.getElementById("swapDirection");
+        const swapRate = document.getElementById("swapRate");
+        const liquidityRate = document.getElementById("liquidityRate");
+        const status = document.getElementById("status");
+        const tabs = document.querySelectorAll(".tab");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        let provider, signer, puerContract, faucetContract, swapContract;
+        let isTeaToPuer = true;
+        let isConnected = false;
+
+        const defaultGasOptions = {
+            gasLimit: 500000,
+            gasPrice: ethers.parseUnits("50", "gwei")
+        };
+
+        async function waitForTransaction(txHash) {
+            const receipt = await provider.waitForTransaction(txHash);
+            if (receipt.status === 1) {
+                console.log(`Transaction ${txHash} confirmed successfully!`);
+                return true;
+            } else {
+                console.log(`Transaction ${txHash} failed!`);
+                return false;
+            }
+        }
+
+        connectButton.onclick = async () => {
+            if (!isConnected) {
+                try {
+                    if (!window.ethereum) {
+                        status.textContent = "Please install Metamask!";
+                        return;
+                    }
+                    await window.ethereum.request({ method: "eth_requestAccounts" });
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+                    const address = await signer.getAddress();
+                    status.textContent = `Connected: ${address}`;
+
+                    puerContract = new ethers.Contract(puerAddress, erc20ABI, signer);
+                    faucetContract = new ethers.Contract(faucetAddress, faucetABI, signer);
+                    swapContract = new ethers.Contract(swapAddress, swapABI, signer);
+
+                    connectButton.textContent = "Disconnect";
+                    faucetButton.style.display = "inline-block";
+                    isConnected = true;
+
+                    addLiquidityButton.disabled = false;
+                    swapButton.disabled = false;
+                    puerAmountInput.disabled = false;
+                    teaAmountInput.disabled = false;
+                    swapFromAmountInput.disabled = false;
+
+                    const puerBalance = await swapContract.puerBalance();
+                    const teaBalance = await swapContract.teaBalance();
+                    console.log("Pool PUER Balance:", ethers.formatEther(puerBalance));
+                    console.log("Pool TEA Balance:", ethers.formatEther(teaBalance));
+                    if (puerBalance == 0n || teaBalance == 0n) {
+                        liquidityRate.textContent = "Pool is empty. Set initial PUER:TEA ratio.";
+                    } else {
+                        const rate = ethers.formatEther(await swapContract.getTeaPerPuer());
+                        liquidityRate.textContent = `1 PUER = ${rate} TEA`;
+                    }
+                } catch (error) {
+                    status.textContent = `Error: ${error.message}`;
+                    console.error("Connect Error:", error);
+                }
+            } else {
+                provider = null;
+                signer = null;
+                puerContract = null;
+                faucetContract = null;
+                swapContract = null;
+                connectButton.textContent = "Connect Wallet";
+                faucetButton.style.display = "none";
+                faucetMenu.style.display = "none";
+                status.textContent = "Disconnected";
+                isConnected = false;
+
+                addLiquidityButton.disabled = true;
+                swapButton.disabled = true;
+                puerAmountInput.disabled = true;
+                teaAmountInput.disabled = true;
+                swapFromAmountInput.disabled = true;
+            }
+        };
+
+        faucetButton.onclick = () => {
+            faucetMenu.style.display = faucetMenu.style.display === "block" ? "none" : "block";
+        };
+
+        teaFaucet.onclick = () => {
+            window.open("https://faucet-sepolia.tea.xyz/", "_blank");
+            faucetMenu.style.display = "none";
+        };
+
+        puerFaucet.onclick = async () => {
+            try {
+                status.textContent = "Requesting PUER tokens...";
+                const tx = await faucetContract.requestTokens({ ...defaultGasOptions });
+                console.log("PUER Faucet Tx:", tx.hash);
+                const success = await waitForTransaction(tx.hash);
+                status.textContent = success ? "Success! You received 100 PUER" : "Faucet request failed!";
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                console.error("PUER Faucet Error:", error);
+            }
+            faucetMenu.style.display = "none";
+        };
+
+        addLiquidityButton.onclick = async () => {
+            try {
+                const puerAmount = ethers.parseEther(puerAmountInput.value || "0");
+                const teaAmount = ethers.parseEther(teaAmountInput.value || "0");
+
+                if (puerAmount == 0n || teaAmount == 0n) {
+                    status.textContent = "Error: Please enter a valid amount";
+                    return;
+                }
+
+                const puerBalance = await puerContract.balanceOf(await signer.getAddress());
+                const teaBalance = await provider.getBalance(await signer.getAddress());
+                console.log("User PUER Balance:", ethers.formatEther(puerBalance));
+                console.log("User TEA Balance:", ethers.formatEther(teaBalance));
+                if (puerBalance < puerAmount) throw new Error("Insufficient PUER balance");
+                if (teaBalance < teaAmount) throw new Error("Insufficient TEA balance");
+
+                const allowance = await puerContract.allowance(await signer.getAddress(), swapAddress);
+                console.log("Allowance:", ethers.formatEther(allowance));
+                if (allowance < puerAmount) {
+                    status.textContent = "Approving PUER...";
+                    const approveTx = await puerContract.approve(swapAddress, puerAmount, { ...defaultGasOptions });
+                    console.log("Approve Tx:", approveTx.hash);
+                    await waitForTransaction(approveTx.hash);
+                }
+
+                status.textContent = "Adding liquidity...";
+                const tx = await swapContract.addLiquidity(puerAmount, { value: teaAmount, ...defaultGasOptions });
+                console.log("Add Liquidity Tx:", tx.hash);
+                const success = await waitForTransaction(tx.hash);
+                status.textContent = success ? "Liquidity added successfully!" : "Liquidity addition failed!";
+                
+                if (success) {
+                    puerAmountInput.value = "";
+                    teaAmountInput.value = "";
+                    liquidityRate.textContent = "";
+                }
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                console.error("Add Liquidity Error:", error);
+                if (error.data) console.log("Revert data:", error.data);
+            }
+        };
+
+        puerAmountInput.oninput = async () => {
+            try {
+                const puerAmount = ethers.parseEther(puerAmountInput.value || "0");
+                if (puerAmount == 0n) {
+                    liquidityRate.textContent = "";
+                    return;
+                }
+
+                if (!swapContract) {
+                    liquidityRate.textContent = "Connect wallet first";
+                    return;
+                }
+
+                const puerBalance = await swapContract.puerBalance();
+                const teaBalance = await swapContract.teaBalance();
+                if (puerBalance == 0n || teaBalance == 0n) {
+                    liquidityRate.textContent = "Pool is empty. Set initial PUER:TEA ratio.";
+                } else {
+                    const teaAmount = (puerAmount * teaBalance) / puerBalance;
+                    teaAmountInput.value = ethers.formatEther(teaAmount);
+                    const rate = ethers.formatEther(await swapContract.getTeaPerPuer());
+                    liquidityRate.textContent = `1 PUER = ${rate} TEA`;
+                }
+            } catch (error) {
+                liquidityRate.textContent = "Error calculating rate";
+                console.error("Rate calculation error:", error);
+            }
+        };
+
+        swapFromAmountInput.oninput = async () => {
+            try {
+                const amount = ethers.parseEther(swapFromAmountInput.value || "0");
+                if (amount == 0n) {
+                    swapToAmountInput.value = "0.0";
+                    return;
+                }
+
+                const puerBalance = await swapContract.puerBalance();
+                const teaBalance = await swapContract.teaBalance();
+                console.log("Pool PUER Balance (Swap):", ethers.formatEther(puerBalance));
+                console.log("Pool TEA Balance (Swap):", ethers.formatEther(teaBalance));
+
+                if (puerBalance == 0n || teaBalance == 0n) {
+                    swapToAmountInput.value = "0.0";
+                    return;
+                }
+
+                if (isTeaToPuer) {
+                    const puerAmount = (amount * puerBalance) / (teaBalance + amount);
+                    swapToAmountInput.value = ethers.formatEther(puerAmount);
+                } else {
+                    const teaAmount = (amount * teaBalance) / (puerBalance + amount);
+                    swapToAmountInput.value = ethers.formatEther(teaAmount);
+                }
+            } catch (error) {
+                swapToAmountInput.value = "0.0";
+                console.error("Rate calculation error:", error);
+            }
+        };
+
+        swapDirection.onclick = () => {
+            isTeaToPuer = !isTeaToPuer;
+            swapFromToken.textContent = isTeaToPuer ? "TEA" : "PUER";
+            swapToToken.textContent = isTeaToPuer ? "PUER" : "TEA";
+            swapFromAmountInput.value = "";
+            swapToAmountInput.value = "0.0";
+            swapRate.textContent = "";
+        };
+
+        swapButton.onclick = async () => {
+            try {
+                const amount = ethers.parseEther(swapFromAmountInput.value || "0");
+                status.textContent = "Swapping...";
+                let success;
+
+                const puerBalanceBefore = await swapContract.puerBalance();
+                const teaBalanceBefore = await swapContract.teaBalance();
+                const userPuerBefore = await puerContract.balanceOf(await signer.getAddress());
+                const userTeaBefore = await provider.getBalance(await signer.getAddress());
+                console.log("Before Swap - Pool PUER:", ethers.formatEther(puerBalanceBefore));
+                console.log("Before Swap - Pool TEA:", ethers.formatEther(teaBalanceBefore));
+                console.log("Before Swap - User PUER:", ethers.formatEther(userPuerBefore));
+                console.log("Before Swap - User TEA:", ethers.formatEther(userTeaBefore));
+
+                if (isTeaToPuer) {
+                    const balance = await provider.getBalance(await signer.getAddress());
+                    if (balance < amount) throw new Error("Insufficient TEA balance");
+                    if (puerBalanceBefore == 0n) throw new Error("No PUER in pool to swap");
+                    const tx = await swapContract.swapTeaToPuer({ value: amount, ...defaultGasOptions });
+                    console.log("Swap TEA to PUER Tx:", tx.hash);
+                    success = await waitForTransaction(tx.hash);
+                    status.textContent = success ? "Swap TEA to PUER completed!" : "Swap failed!";
+                } else {
+                    const userPuerBalance = await puerContract.balanceOf(await signer.getAddress());
+                    if (userPuerBalance < amount) throw new Error("Insufficient PUER balance");
+                    if (teaBalanceBefore == 0n) throw new Error("No TEA in pool to swap");
+                    const approveTx = await puerContract.approve(swapAddress, amount, { ...defaultGasOptions });
+                    console.log("Approve Tx:", approveTx.hash);
+                    await waitForTransaction(approveTx.hash);
+
+                    const tx = await swapContract.swapPuerToTea(amount, { ...defaultGasOptions });
+                    console.log("Swap PUER to TEA Tx:", tx.hash);
+                    success = await waitForTransaction(tx.hash);
+                    status.textContent = success ? "Swap PUER to TEA completed!" : "Swap failed!";
+                }
+
+                const puerBalanceAfter = await swapContract.puerBalance();
+                const teaBalanceAfter = await swapContract.teaBalance();
+                const userPuerAfter = await puerContract.balanceOf(await signer.getAddress());
+                const userTeaAfter = await provider.getBalance(await signer.getAddress());
+                console.log("After Swap - Pool PUER:", ethers.formatEther(puerBalanceAfter));
+                console.log("After Swap - Pool TEA:", ethers.formatEther(teaBalanceAfter));
+                console.log("After Swap - User PUER:", ethers.formatEther(userPuerAfter));
+                console.log("After Swap - User TEA:", ethers.formatEther(userTeaAfter));
+
+                if (success) {
+                    swapFromAmountInput.value = "";
+                    swapToAmountInput.value = "0.0";
+                    swapRate.textContent = "";
+                } else {
+                    status.textContent += " (No tokens received)";
+                }
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                console.error("Swap Error:", error);
+            }
+        };
+
+        tabs.forEach(tab => {
+            tab.onclick = () => {
+                tabs.forEach(t => t.classList.remove("active"));
+                tabContents.forEach(c => c.classList.remove("active"));
+                tab.classList.add("active");
+                document.getElementById(tab.dataset.tab).classList.add("active");
+            };
+        });
+    </script>
+</body>
+</html>
